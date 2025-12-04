@@ -94,8 +94,8 @@
             JUMP_FORCE: -18,
             INITIAL_SPEED: 8,
             SPEED_INCREMENT: 0.01,
-            OBSTACLE_MIN_GAP: 150,
-            OBSTACLE_MAX_GAP: 300,
+            OBSTACLE_MIN_GAP: 250,  // Increased minimum gap to make obstacles less frequent
+            OBSTACLE_MAX_GAP: 500,  // Increased maximum gap to make obstacles less frequent
             OBSTACLE_MIN_HEIGHT: 40,
             OBSTACLE_MAX_HEIGHT: 80,
             ASSETS: {
@@ -128,8 +128,8 @@
             score: 0,
             gameSpeed: CONFIG.INITIAL_SPEED,
             gameOver: false,
-            lastObstacleTime: 0,
-            nextObstacleDistance: 0,
+            lastObstacleTime: 0,  // Time when last obstacle was created
+            nextObstacleInterval: 0,  // Time interval before next obstacle (in ms)
             assets: {
                 sky: null,
                 ground: null,
@@ -216,8 +216,8 @@
             gameState.gameSpeed = CONFIG.INITIAL_SPEED;
             gameState.gameOver = false;
             gameState.lastObstacleTime = Date.now();
-            gameState.nextObstacleDistance = Math.random() * 
-                (CONFIG.OBSTACLE_MAX_GAP - CONFIG.OBSTACLE_MIN_GAP) + CONFIG.OBSTACLE_MIN_GAP;
+            // Set a longer time interval for obstacle spawning to fix the "too frequent" issue
+            gameState.nextObstacleInterval = Math.random() * 2000 + 1500; // 1.5 to 3.5 seconds
             
             // Hide UI screens
             document.getElementById('startScreen').style.display = 'none';
@@ -249,8 +249,8 @@
             
             gameState.obstacles.push(obstacle);
             gameState.lastObstacleTime = Date.now();
-            gameState.nextObstacleDistance = Math.random() * 
-                (CONFIG.OBSTACLE_MAX_GAP - CONFIG.OBSTACLE_MIN_GAP) + CONFIG.OBSTACLE_MIN_GAP;
+            // Set time for next obstacle (between 1.5 and 3.5 seconds)
+            gameState.nextObstacleInterval = Math.random() * 2000 + 1500;
         }
 
         // Check collision between two rectangles
@@ -325,8 +325,8 @@
                 }
             }
             
-            // Create new obstacles
-            if (Date.now() - gameState.lastObstacleTime > gameState.nextObstacleDistance) {
+            // Create new obstacles based on time interval to make them less frequent
+            if (Date.now() - gameState.lastObstacleTime > gameState.nextObstacleInterval) {
                 createObstacle();
             }
         }
