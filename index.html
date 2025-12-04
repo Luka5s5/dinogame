@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dino Runner</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { 
+            overflow: hidden;
+            background: #f7f7f7;
+            touch-action: manipulation;
+        }
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background: #87CEEB;
+        }
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            z-index: 10;
+        }
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            z-index: 10;
+        }
+        button {
+            background: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 18px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .score-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="startScreen">
+        <h1>🦕 DINO RUNNER</h1>
+        <p>Tap to jump over obstacles</p>
+        <button id="startButton">START GAME</button>
+    </div>
+    <div id="gameOverScreen">
+        <h1>GAME OVER</h1>
+        <p id="finalScore">Score: 0</p>
+        <button id="restartButton">PLAY AGAIN</button>
+    </div>
+    <div class="score-display" id="scoreDisplay">0</div>
+
+    <script>
+        // Game configuration
+        const CONFIG = {
+            GROUND_HEIGHT: 100,
+            GRAVITY: 0.8,
+            JUMP_FORCE: -18,
+            INITIAL_SPEED: 8,
+            SPEED_INCREMENT: 0.01,
+            OBSTACLE_MIN_GAP: 150,
+            OBSTACLE_MAX_GAP: 300,
+            OBSTACLE_MIN_HEIGHT: 40,
+            OBSTACLE_MAX_HEIGHT: 80,
+            ASSETS: {
+                SKY: 'assets/sky.png',
+                GROUND: 'assets/ground.png',
+                PLAYER: 'assets/player.png',
+                OBSTACLES_FOLDER: 'obstacles/'
+            }
+        };
+
+        // Game state
+        let gameState = {
+            canvas: null,
+            ctx: null,
+            player: {
+                x: 100,
+                y: 0,
+                width: 60,
+                height: 60,
+                velocityY: 0,
+                isJumping: false
+            },
+            ground: {
+                x1: 0,
+                x2: 0,
+                width: 0,
+                height: CONFIG.GROUND_HEIGHT
+            },
+            obstacles: [],
+            score: 0,
+            gameSpeed: CONFIG.INITIAL_SPEED,
+            gameOver: false,
+            lastObstacleTime: 0,
+            nextObstacleDistance: 0,
+            assets: {
+                sky: null,
+                ground: null,
+                player: null,
+                obstacles: []
+            },
+            imagesLoaded: 0,
+            totalImages: 0
+        };
+
+        // Preload assets
+        function preloadAssets() {
+            const assetPaths = [
+                CONFIG.ASSETS.SKY,
+                CONFIG.ASSETS.GROUND,
+                CONFIG.ASSETS.PLAYER
+            ];
+            
+            // Get obstacle files from server (simplified for Telegram)
+            // In production, you'd have a predefined list or API endpoint
+            const obstacleFiles = [
+                'cactus1.png',
+                'cactus2.png',
+                'bird.png',
+                'rock.png'
+            ];
+            
+            obstacleFiles.forEach(file => {
+                assetPaths.push(CONFIG.ASSETS.OBSTACLES_FOLDER + file);
+            });
+            
+            gameState.totalImages = assetPaths.length;
+            
+            assetPaths.forEach((path, index) => {
+                const img = new Image();
+                img.onload = () => {
+                    gameState.imagesLoaded++;
+                    if (index === 0) gameState.assets.sky = img;
+                    else if (index === 1) gameState.assets.ground = img;
+                    else if (index === 2) gameState.assets.player = img;
+                    else {
+                        // Scale obstacle while maintaining aspect ratio
+                        const scale = Math.random() * 
+                            (CONFIG.OBSTACLE_MAX_HEIGHT - CONFIG.OBSTACLE_MIN_HEIGHT) / img.height 
+                            + (CONFIG.OBSTACLE_MIN_HEIGHT / img.height);
+                        const scaledWidth = img.width * scale;
+                        const scaledHeight = img.height * scale;
+                        
+                        const canvas = document.createElement('canvas');
+                        canvas.width = scaledWidth;
+                        canvas.height = scaledHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
+                        
+                        gameState.assets.obstacles.push(canvas);
+                    }
+                };
+                img.onerror = () => {
+                    console.error(`Failed to load asset: ${path}`);
+                    gameState.imagesLoaded++;
+                };
+                img.src = path;
+            });
+        }
+
+        // Initialize game
+        function initGame() {
+            gameState.canvas = document.getElementById('gameCanvas');
+            gameState.ctx = gameState.canvas.getContext('2d');
+            
+            // Set canvas size to fill screen
+            gameState.canvas.width = window.innerWidth;
+            gameState.canvas.height = window.innerHeight;
+            
+            // Adjust ground position
+            gameState.ground.width = gameState.canvas.width;
+            gameState.ground.x1 = 0;
+            gameState.ground.x2 = gameState.canvas.width;
+            gameState.player.y = gameState.canvas.height - CONFIG.GROUND_HEIGHT - gameState.player.height;
+            
+            // Reset game state
+            gameState.obstacles = [];
+            gameState.score = 0;
+            gameState.gameSpeed = CONFIG.INITIAL_SPEED;
+            gameState.gameOver = false;
+            gameState.lastObstacleTime = Date.now();
+            gameState.nextObstacleDistance = Math.random() * 
+                (CONFIG.OBSTACLE_MAX_GAP - CONFIG.OBSTACLE_MIN_GAP) + CONFIG.OBSTACLE_MIN_GAP;
+            
+            // Hide UI screens
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            
+            // Start game loop
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Create new obstacle
+        function createObstacle() {
+            const obstacleImg = gameState.assets.obstacles[
+                Math.floor(Math.random() * gameState.assets.obstacles.length)
+            ];
+            
+            const obstacle = {
+                x: gameState.canvas.width,
+                y: gameState.canvas.height - CONFIG.GROUND_HEIGHT - obstacleImg.height,
+                width: obstacleImg.width,
+                height: obstacleImg.height,
+                img: obstacleImg,
+                passed: false
+            };
+            
+            // Randomly position some obstacles higher (like birds)
+            if (Math.random() > 0.7) {
+                obstacle.y -= Math.random() * 50 + 20;
+            }
+            
+            gameState.obstacles.push(obstacle);
+            gameState.lastObstacleTime = Date.now();
+            gameState.nextObstacleDistance = Math.random() * 
+                (CONFIG.OBSTACLE_MAX_GAP - CONFIG.OBSTACLE_MIN_GAP) + CONFIG.OBSTACLE_MIN_GAP;
+        }
+
+        // Check collision between two rectangles
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+
+        // Update game state
+        function update() {
+            if (gameState.gameOver) return;
+            
+            // Update player
+            gameState.player.velocityY += CONFIG.GRAVITY;
+            gameState.player.y += gameState.player.velocityY;
+            
+            // Ground collision
+            const groundLevel = gameState.canvas.height - CONFIG.GROUND_HEIGHT - gameState.player.height;
+            if (gameState.player.y > groundLevel) {
+                gameState.player.y = groundLevel;
+                gameState.player.velocityY = 0;
+                gameState.player.isJumping = false;
+            }
+            
+            // Update ground
+            gameState.ground.x1 -= gameState.gameSpeed;
+            gameState.ground.x2 -= gameState.gameSpeed;
+            
+            if (gameState.ground.x1 + gameState.ground.width <= 0) {
+                gameState.ground.x1 = gameState.ground.x2 + gameState.ground.width;
+            }
+            
+            if (gameState.ground.x2 + gameState.ground.width <= 0) {
+                gameState.ground.x2 = gameState.ground.x1 + gameState.ground.width;
+            }
+            
+            // Update obstacles
+            for (let i = gameState.obstacles.length - 1; i >= 0; i--) {
+                const obstacle = gameState.obstacles[i];
+                obstacle.x -= gameState.gameSpeed;
+                
+                // Check collision
+                if (checkCollision(
+                    {
+                        x: gameState.player.x,
+                        y: gameState.player.y,
+                        width: gameState.player.width,
+                        height: gameState.player.height
+                    },
+                    obstacle
+                )) {
+                    gameState.gameOver = true;
+                }
+                
+                // Score when passing obstacle
+                if (!obstacle.passed && obstacle.x + obstacle.width < gameState.player.x) {
+                    gameState.score++;
+                    obstacle.passed = true;
+                    document.getElementById('scoreDisplay').textContent = gameState.score;
+                    
+                    // Increase speed every 10 points
+                    if (gameState.score % 10 === 0) {
+                        gameState.gameSpeed += CONFIG.SPEED_INCREMENT;
+                    }
+                }
+                
+                // Remove off-screen obstacles
+                if (obstacle.x + obstacle.width < 0) {
+                    gameState.obstacles.splice(i, 1);
+                }
+            }
+            
+            // Create new obstacles
+            if (Date.now() - gameState.lastObstacleTime > gameState.nextObstacleDistance) {
+                createObstacle();
+            }
+        }
+
+        // Draw game elements
+        function draw() {
+            const ctx = gameState.ctx;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, gameState.canvas.width, gameState.canvas.height);
+            
+            // Draw sky background
+            if (gameState.assets.sky) {
+                ctx.drawImage(
+                    gameState.assets.sky, 
+                    0, 0, 
+                    gameState.canvas.width, 
+                    gameState.canvas.height - CONFIG.GROUND_HEIGHT
+                );
+            } else {
+                ctx.fillStyle = '#87CEEB';
+                ctx.fillRect(0, 0, gameState.canvas.width, gameState.canvas.height - CONFIG.GROUND_HEIGHT);
+            }
+            
+            // Draw ground
+            if (gameState.assets.ground) {
+                // Draw first ground segment
+                ctx.drawImage(
+                    gameState.assets.ground,
+                    gameState.ground.x1, 
+                    gameState.canvas.height - CONFIG.GROUND_HEIGHT,
+                    gameState.ground.width,
+                    CONFIG.GROUND_HEIGHT
+                );
+                
+                // Draw second ground segment
+                ctx.drawImage(
+                    gameState.assets.ground,
+                    gameState.ground.x2, 
+                    gameState.canvas.height - CONFIG.GROUND_HEIGHT,
+                    gameState.ground.width,
+                    CONFIG.GROUND_HEIGHT
+                );
+            } else {
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(0, gameState.canvas.height - CONFIG.GROUND_HEIGHT, gameState.canvas.width, CONFIG.GROUND_HEIGHT);
+            }
+            
+            // Draw obstacles
+            gameState.obstacles.forEach(obstacle => {
+                ctx.drawImage(
+                    obstacle.img,
+                    obstacle.x,
+                    obstacle.y,
+                    obstacle.width,
+                    obstacle.height
+                );
+            });
+            
+            // Draw player
+            if (gameState.assets.player) {
+                ctx.drawImage(
+                    gameState.assets.player,
+                    gameState.player.x,
+                    gameState.player.y,
+                    gameState.player.width,
+                    gameState.player.height
+                );
+            } else {
+                ctx.fillStyle = '#333';
+                ctx.fillRect(
+                    gameState.player.x,
+                    gameState.player.y,
+                    gameState.player.width,
+                    gameState.player.height
+                );
+            }
+        }
+
+        // Main game loop
+        function gameLoop() {
+            if (gameState.imagesLoaded < gameState.totalImages) {
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+            
+            update();
+            draw();
+            
+            if (gameState.gameOver) {
+                document.getElementById('finalScore').textContent = `Score: ${gameState.score}`;
+                document.getElementById('gameOverScreen').style.display = 'flex';
+                return;
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Handle jump
+        function handleJump() {
+            if (gameState.gameOver || gameState.player.isJumping) return;
+            
+            gameState.player.velocityY = CONFIG.JUMP_FORCE;
+            gameState.player.isJumping = true;
+        }
+
+        // Event listeners
+        document.getElementById('startButton').addEventListener('click', initGame);
+        document.getElementById('restartButton').addEventListener('click', initGame);
+        
+        // Touch and click events for jumping
+        document.addEventListener('click', handleJump);
+        document.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleJump();
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (gameState.canvas) {
+                gameState.canvas.width = window.innerWidth;
+                gameState.canvas.height = window.innerHeight;
+                gameState.ground.width = gameState.canvas.width;
+                gameState.player.y = gameState.canvas.height - CONFIG.GROUND_HEIGHT - gameState.player.height;
+            }
+        });
+
+        // Initialize
+        preloadAssets();
+    </script>
+</body>
+</html>
