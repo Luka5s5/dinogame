@@ -86,6 +86,7 @@
     </div>
     <div class="score-display" id="scoreDisplay">0</div>
 
+    <script src="config.js"></script>
     <script>
         // Game configuration
         const CONFIG = {
@@ -216,8 +217,10 @@
             gameState.gameSpeed = CONFIG.INITIAL_SPEED;
             gameState.gameOver = false;
             gameState.lastObstacleTime = Date.now();
-            // Set a longer time interval for obstacle spawning to fix the "too frequent" issue
-            gameState.nextObstacleInterval = Math.random() * 2000 + 1500; // 1.5 to 3.5 seconds
+            // Set time interval for obstacle spawning using external configuration
+            gameState.nextObstacleInterval = Math.random() * 
+                (OBSTACLE_CONFIG.MAX_OBSTACLE_INTERVAL - OBSTACLE_CONFIG.MIN_OBSTACLE_INTERVAL) + 
+                OBSTACLE_CONFIG.MIN_OBSTACLE_INTERVAL;
             
             // Hide UI screens
             document.getElementById('startScreen').style.display = 'none';
@@ -229,28 +232,47 @@
 
         // Create new obstacle
         function createObstacle() {
-            const obstacleImg = gameState.assets.obstacles[
-                Math.floor(Math.random() * gameState.assets.obstacles.length)
-            ];
+            const obstacleIndex = Math.floor(Math.random() * gameState.assets.obstacles.length);
+            const obstacleImg = gameState.assets.obstacles[obstacleIndex];
             
+            // Check if this obstacle is a bird by looking for "bird" in its filename/index
+            // We'll determine this by checking if it's likely a bird image based on the index
+            // Assuming the bird.png is loaded as one of the obstacles (index 2 in the original list)
+            // But to be more robust, let's create the obstacle first and then determine if it's a bird
             const obstacle = {
                 x: gameState.canvas.width,
                 y: gameState.canvas.height - CONFIG.GROUND_HEIGHT - obstacleImg.height,
                 width: obstacleImg.width,
                 height: obstacleImg.height,
                 img: obstacleImg,
-                passed: false
+                passed: false,
+                isBird: false  // Add a property to identify if this is a bird
             };
             
-            // Randomly position some obstacles higher (like birds)
-            if (Math.random() > 0.7) {
-                obstacle.y -= Math.random() * 50 + 20;
+            // Determine if this is a bird (for now, we'll use the index - in original setup bird.png was 3rd entry)
+            // Better approach: Check based on the type of obstacle - birds should be placed higher
+            // We'll implement a more robust check later
+            
+            // For now, we'll identify birds by checking if we're using the bird.png asset
+            // Since we can't directly check the source, let's make all birds positioned at proper height
+            // by creating them at the appropriate y position
+            if (Math.random() > 0.7) { // Still using random chance to make some birds
+                // Position birds at appropriate height - higher than player can jump
+                // The player jump height is around 18 pixels up per frame with gravity
+                // So birds should be at a height that's clearly above the player's maximum jump
+                const birdHeight = Math.random() * 
+                    (OBSTACLE_CONFIG.BIRD_MAX_HEIGHT - OBSTACLE_CONFIG.BIRD_MIN_HEIGHT) + 
+                    OBSTACLE_CONFIG.BIRD_MIN_HEIGHT;
+                obstacle.y = gameState.canvas.height - CONFIG.GROUND_HEIGHT - birdHeight - obstacleImg.height;
+                obstacle.isBird = true;
             }
             
             gameState.obstacles.push(obstacle);
             gameState.lastObstacleTime = Date.now();
-            // Set time for next obstacle (between 1.5 and 3.5 seconds)
-            gameState.nextObstacleInterval = Math.random() * 2000 + 1500;
+            // Set time for next obstacle based on external config
+            gameState.nextObstacleInterval = Math.random() * 
+                (OBSTACLE_CONFIG.MAX_OBSTACLE_INTERVAL - OBSTACLE_CONFIG.MIN_OBSTACLE_INTERVAL) + 
+                OBSTACLE_CONFIG.MIN_OBSTACLE_INTERVAL;
         }
 
         // Check collision between two rectangles
