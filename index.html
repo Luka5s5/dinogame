@@ -87,7 +87,7 @@
         <p>Don't give up! Try again to beat your record!</p>
         <button id="restartButton">🔄 PLAY AGAIN</button>
     </div>
-    <div class="score-display" id="scoreDisplay">0</div>
+    <div class="score-display" id="scoreDisplay">Score: 0 | Lives: 3 | High: 0</div>
 
     <script src="config.js"></script>
     <script>
@@ -162,6 +162,11 @@
                 gameState.highScore = gameState.score;
                 localStorage.setItem('dinoHighScore', gameState.highScore.toString());
             }
+        }
+
+        // Update score display consistently
+        function updateScoreDisplay() {
+            document.getElementById('scoreDisplay').textContent = `Score: ${gameState.score} | Lives: ${gameState.lives} | High: ${gameState.highScore}`;
         }
 
         // Preload assets
@@ -273,7 +278,7 @@
             document.getElementById('gameOverScreen').style.display = 'none';
             
             // Update score display
-            document.getElementById('scoreDisplay').textContent = `Score: ${gameState.score} | Lives: ${gameState.lives} | High: ${gameState.highScore}`;
+            updateScoreDisplay();
             
             // Start game loop
             requestAnimationFrame(gameLoop);
@@ -326,9 +331,15 @@
 
         // Create new power-up (coin)
         function createPowerUp() {
+            // Limit coin Y position to a reasonable range where player can reach it
+            // Ensure it's not too high but also not too close to the ground
+            const maxCoinY = gameState.canvas.height - CONFIG.GROUND_HEIGHT - 100; // Not too close to ground
+            const minCoinY = 80; // Not too high up
+            const coinYRange = Math.max(0, maxCoinY - minCoinY);
+            
             const powerUp = {
                 x: gameState.canvas.width,
-                y: Math.random() * (gameState.canvas.height - CONFIG.GROUND_HEIGHT - 80) + 40, // Random Y position above ground
+                y: Math.random() * coinYRange + minCoinY, // Constrained Y position
                 width: 30,
                 height: 30,
                 collected: false
@@ -392,6 +403,7 @@
                     obstacle
                 )) {
                     gameState.lives--; // Lose a life on collision
+                    updateScoreDisplay(); // Update display when life is lost
                     if (gameState.lives <= 0) {
                         gameState.gameOver = true;
                     } else {
@@ -404,7 +416,7 @@
                 if (!obstacle.passed && obstacle.x + obstacle.width < gameState.player.x) {
                     gameState.score++;
                     obstacle.passed = true;
-                    document.getElementById('scoreDisplay').textContent = `Score: ${gameState.score} | High: ${gameState.highScore}`;
+                    updateScoreDisplay(); // Use the consistent function
                     
                     // Increase speed every 5 points instead of 10
                     if (gameState.score % 5 === 0) {
@@ -439,7 +451,7 @@
                         powerUp.collected = true;
                         
                         // Update score display to show the extra life
-                        document.getElementById('scoreDisplay').textContent = `Score: ${gameState.score} | Lives: ${gameState.lives} | High: ${gameState.highScore}`;
+                        updateScoreDisplay(); // Use the consistent function
                     }
                     
                     // Remove off-screen power-ups
@@ -575,6 +587,7 @@
             
             if (gameState.gameOver) {
                 saveHighScore(); // Save high score when game ends
+                updateScoreDisplay(); // Make sure display is updated before game ends
                 document.getElementById('finalScore').textContent = `Score: ${gameState.score} | Best: ${gameState.highScore}`;
                 document.getElementById('gameOverScreen').style.display = 'flex';
                 return;
