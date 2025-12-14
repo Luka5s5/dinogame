@@ -75,14 +75,17 @@
 <body>
     <canvas id="gameCanvas"></canvas>
     <div id="startScreen">
-        <h1>🦕 DINO RUNNER</h1>
-        <p>Tap to jump over obstacles</p>
-        <button id="startButton">START GAME</button>
+        <h1>🦖 DINO ADVENTURE</h1>
+        <p>Press SPACE or TAP to jump over obstacles!</p>
+        <p>Collect coins for extra lives!</p>
+        <p>Your goal: Beat your high score!</p>
+        <button id="startButton">🎮 START GAME</button>
     </div>
     <div id="gameOverScreen">
-        <h1>GAME OVER</h1>
+        <h1>💥 GAME OVER 💥</h1>
         <p id="finalScore">Score: 0</p>
-        <button id="restartButton">PLAY AGAIN</button>
+        <p>Don't give up! Try again to beat your record!</p>
+        <button id="restartButton">🔄 PLAY AGAIN</button>
     </div>
     <div class="score-display" id="scoreDisplay">0</div>
 
@@ -126,20 +129,40 @@
                 height: CONFIG.GROUND_HEIGHT
             },
             obstacles: [],
+            powerUps: [], // Array to hold power-up coins
             score: 0,
+            highScore: 0,
             gameSpeed: CONFIG.INITIAL_SPEED,
             gameOver: false,
             lastObstacleTime: 0,  // Time when last obstacle was created
             nextObstacleInterval: 0,  // Time interval before next obstacle (in ms)
+            lastPowerUpTime: 0,  // Time when last power-up was created
+            nextPowerUpInterval: 0,  // Time interval before next power-up (in ms)
             assets: {
                 sky: null,
                 ground: null,
                 player: null,
-                obstacles: []
+                obstacles: [],
+                coin: null  // Coin asset for power-ups
             },
             imagesLoaded: 0,
-            totalImages: 0
+            totalImages: 0,
+            lives: 3  // Number of lives for the player
         };
+
+        // Load high score from localStorage
+        function loadHighScore() {
+            const savedHighScore = localStorage.getItem('dinoHighScore');
+            gameState.highScore = savedHighScore ? parseInt(savedHighScore) : 0;
+        }
+
+        // Save high score to localStorage
+        function saveHighScore() {
+            if (gameState.score > gameState.highScore) {
+                gameState.highScore = gameState.score;
+                localStorage.setItem('dinoHighScore', gameState.highScore.toString());
+            }
+        }
 
         // Preload assets
         function preloadAssets() {
@@ -162,6 +185,9 @@
                 assetPaths.push(CONFIG.ASSETS.OBSTACLES_FOLDER + file);
             });
             
+            // Add coin asset (assuming we have a coin.png in assets)
+            assetPaths.push('assets/coin.png');
+            
             gameState.totalImages = assetPaths.length;
             
             assetPaths.forEach((path, index) => {
@@ -171,7 +197,9 @@
                     if (index === 0) gameState.assets.sky = img;
                     else if (index === 1) gameState.assets.ground = img;
                     else if (index === 2) gameState.assets.player = img;
-                    else {
+                    else if (index === assetPaths.length - 1) { // Last item is coin
+                        gameState.assets.coin = img;
+                    } else {
                         // Scale obstacle while maintaining aspect ratio
                         const scale = Math.random() * 
                             (CONFIG.OBSTACLE_MAX_HEIGHT - CONFIG.OBSTACLE_MIN_HEIGHT) / img.height 
@@ -190,6 +218,21 @@
                 };
                 img.onerror = () => {
                     console.error(`Failed to load asset: ${path}`);
+                    // If coin asset fails to load, we can create a simple circle instead
+                    if (index === assetPaths.length - 1) { // Last item is coin
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 30;
+                        canvas.height = 30;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#FFD700';
+                        ctx.beginPath();
+                        ctx.arc(15, 15, 12, 0, Math.PI * 2); // Gold-colored coin
+                        ctx.fill();
+                        ctx.strokeStyle = '#DAA520';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        gameState.assets.coin = canvas;
+                    }
                     gameState.imagesLoaded++;
                 };
                 img.src = path;
@@ -213,10 +256,13 @@
             
             // Reset game state
             gameState.obstacles = [];
+            gameState.powerUps = []; // Reset power-ups
             gameState.score = 0;
             gameState.gameSpeed = CONFIG.INITIAL_SPEED;
             gameState.gameOver = false;
+            gameState.lives = 3; // Reset lives to 3 on new game
             gameState.lastObstacleTime = Date.now();
+            gameState.lastPowerUpTime = Date.now(); // Reset power-up timer
             // Set time interval for obstacle spawning using external configuration
             gameState.nextObstacleInterval = Math.random() * 
                 (OBSTACLE_CONFIG.MAX_OBSTACLE_INTERVAL - OBSTACLE_CONFIG.MIN_OBSTACLE_INTERVAL) + 
@@ -225,6 +271,9 @@
             // Hide UI screens
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOverScreen').style.display = 'none';
+            
+            // Update score display
+            document.getElementById('scoreDisplay').textContent = `Score: ${gameState.score} | Lives: ${gameState.lives} | High: ${gameState.highScore}`;
             
             // Start game loop
             requestAnimationFrame(gameLoop);
@@ -273,6 +322,22 @@
             gameState.nextObstacleInterval = Math.random() * 
                 (OBSTACLE_CONFIG.MAX_OBSTACLE_INTERVAL - OBSTACLE_CONFIG.MIN_OBSTACLE_INTERVAL) + 
                 OBSTACLE_CONFIG.MIN_OBSTACLE_INTERVAL;
+        }
+
+        // Create new power-up (coin)
+        function createPowerUp() {
+            const powerUp = {
+                x: gameState.canvas.width,
+                y: Math.random() * (gameState.canvas.height - CONFIG.GROUND_HEIGHT - 80) + 40, // Random Y position above ground
+                width: 30,
+                height: 30,
+                collected: false
+            };
+            
+            gameState.powerUps.push(powerUp);
+            gameState.lastPowerUpTime = Date.now();
+            // Set time for next power-up (random interval between 5-15 seconds)
+            gameState.nextPowerUpInterval = Math.random() * 10000 + 5000; // 5-15 seconds
         }
 
         // Check collision between two rectangles
@@ -326,17 +391,23 @@
                     },
                     obstacle
                 )) {
-                    gameState.gameOver = true;
+                    gameState.lives--; // Lose a life on collision
+                    if (gameState.lives <= 0) {
+                        gameState.gameOver = true;
+                    } else {
+                        // Remove the obstacle that caused the collision
+                        gameState.obstacles.splice(i, 1);
+                    }
                 }
                 
                 // Score when passing obstacle
                 if (!obstacle.passed && obstacle.x + obstacle.width < gameState.player.x) {
                     gameState.score++;
                     obstacle.passed = true;
-                    document.getElementById('scoreDisplay').textContent = gameState.score;
+                    document.getElementById('scoreDisplay').textContent = `Score: ${gameState.score} | High: ${gameState.highScore}`;
                     
-                    // Increase speed every 10 points
-                    if (gameState.score % 10 === 0) {
+                    // Increase speed every 5 points instead of 10
+                    if (gameState.score % 5 === 0) {
                         gameState.gameSpeed += CONFIG.SPEED_INCREMENT;
                     }
                 }
@@ -347,9 +418,45 @@
                 }
             }
             
+            // Update power-ups
+            for (let i = gameState.powerUps.length - 1; i >= 0; i--) {
+                const powerUp = gameState.powerUps[i];
+                if (!powerUp.collected) {
+                    powerUp.x -= gameState.gameSpeed;
+                    
+                    // Check collision with player
+                    if (checkCollision(
+                        {
+                            x: gameState.player.x,
+                            y: gameState.player.y,
+                            width: gameState.player.width,
+                            height: gameState.player.height
+                        },
+                        powerUp
+                    )) {
+                        // Collect the power-up: add an extra life
+                        gameState.lives++;
+                        powerUp.collected = true;
+                        
+                        // Update score display to show the extra life
+                        document.getElementById('scoreDisplay').textContent = `Score: ${gameState.score} | Lives: ${gameState.lives} | High: ${gameState.highScore}`;
+                    }
+                    
+                    // Remove off-screen power-ups
+                    if (powerUp.x + powerUp.width < 0) {
+                        gameState.powerUps.splice(i, 1);
+                    }
+                }
+            }
+            
             // Create new obstacles based on time interval to make them less frequent
             if (Date.now() - gameState.lastObstacleTime > gameState.nextObstacleInterval) {
                 createObstacle();
+            }
+            
+            // Create new power-ups based on time interval
+            if (Date.now() - gameState.lastPowerUpTime > gameState.nextPowerUpInterval) {
+                createPowerUp();
             }
         }
 
@@ -397,6 +504,34 @@
             //     ctx.fillRect(0, gameState.canvas.height - CONFIG.GROUND_HEIGHT, gameState.canvas.width, CONFIG.GROUND_HEIGHT);
             // }
             //
+            // Draw power-ups (coins)
+            gameState.powerUps.forEach(powerUp => {
+                if (!powerUp.collected && gameState.assets.coin) {
+                    ctx.drawImage(
+                        gameState.assets.coin,
+                        powerUp.x,
+                        powerUp.y,
+                        powerUp.width,
+                        powerUp.height
+                    );
+                } else if (!powerUp.collected) {
+                    // Draw a simple circle if coin asset failed to load
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(
+                        powerUp.x + powerUp.width/2, 
+                        powerUp.y + powerUp.height/2, 
+                        powerUp.width/2, 
+                        0, 
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                    ctx.strokeStyle = '#DAA520';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+            
             // Draw obstacles
             gameState.obstacles.forEach(obstacle => {
                 ctx.drawImage(
@@ -439,7 +574,8 @@
             draw();
             
             if (gameState.gameOver) {
-                document.getElementById('finalScore').textContent = `Score: ${gameState.score}`;
+                saveHighScore(); // Save high score when game ends
+                document.getElementById('finalScore').textContent = `Score: ${gameState.score} | Best: ${gameState.highScore}`;
                 document.getElementById('gameOverScreen').style.display = 'flex';
                 return;
             }
@@ -466,6 +602,14 @@
             handleJump();
         });
         
+        // Keyboard event for spacebar jump on desktop
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.key === ' ') {
+                e.preventDefault(); // Prevent scrolling when spacebar is pressed
+                handleJump();
+            }
+        });
+        
         // Handle window resize
         window.addEventListener('resize', () => {
             if (gameState.canvas) {
@@ -477,6 +621,7 @@
         });
 
         // Initialize
+        loadHighScore(); // Load high score before starting the game
         preloadAssets();
     </script>
 </body>
