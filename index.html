@@ -76,7 +76,7 @@
         
         .mute-button {
             position: absolute;
-            top: 10px;
+            top: 60px;  /* Moved down to avoid overlap with score display */
             left: 10px;
             background: none;
             border: none;
@@ -176,6 +176,7 @@
             lives: 3,  // Number of lives for the player
             backgroundMusic: null,  // Audio element for background music
             hurtSound: null,  // Audio element for hurt sound
+            jumpSound: null,  // Audio element for jump sound
             musicMuted: false  // Whether music is muted
         };
 
@@ -250,7 +251,7 @@
             // Add coin asset (assuming we have a coin.png in assets)
             imagePaths.push('assets/coin.png');
             
-            gameState.totalImages = imagePaths.length + 1; // +1 for both audio files (they're handled together)
+            gameState.totalImages = imagePaths.length + 1; // +1 for all audio files (they're handled together)
             
             imagePaths.forEach((path, index) => {
                 const img = new Image();
@@ -309,17 +310,22 @@
             gameState.hurtSound = new Audio('assets/hurt.mp3');
             gameState.hurtSound.volume = 0.7; // Set volume for hurt sound
             
+            // Create audio element for jump sound
+            gameState.jumpSound = new Audio('assets/jump.mp3');
+            gameState.jumpSound.volume = 0.6; // Set volume for jump sound
+            
             // Load audio and then continue with game initialization
             let audioLoadedCount = 0;
             const handleAudioLoad = () => {
                 audioLoadedCount++;
-                if (audioLoadedCount === 2) { // Both background and hurt sounds loaded or failed
+                if (audioLoadedCount === 3) { // All three audio files loaded or failed
                     gameState.imagesLoaded++; // Increment to account for audio loading
                 }
             };
             
             gameState.backgroundMusic.addEventListener('canplaythrough', handleAudioLoad);
             gameState.hurtSound.addEventListener('canplaythrough', handleAudioLoad);
+            gameState.jumpSound.addEventListener('canplaythrough', handleAudioLoad);
             
             gameState.backgroundMusic.addEventListener('error', () => {
                 console.error('Failed to load background music');
@@ -331,9 +337,15 @@
                 handleAudioLoad(); // Still count as loaded to not hang the game
             });
             
-            // Start loading both audio files
+            gameState.jumpSound.addEventListener('error', () => {
+                console.error('Failed to load jump sound');
+                handleAudioLoad(); // Still count as loaded to not hang the game
+            });
+            
+            // Start loading all audio files
             gameState.backgroundMusic.load();
             gameState.hurtSound.load();
+            gameState.jumpSound.load();
         }
 
         // Initialize game
@@ -709,6 +721,14 @@
             
             gameState.player.velocityY = CONFIG.JUMP_FORCE;
             gameState.player.isJumping = true;
+            
+            // Play jump sound when player actually jumps
+            if (gameState.jumpSound && !gameState.musicMuted) {
+                // Clone the audio to allow overlapping sounds
+                const jumpAudio = new Audio('assets/jump.mp3');
+                jumpAudio.volume = 0.6;
+                jumpAudio.play().catch(e => console.log("Jump sound play failed:", e));
+            }
         }
 
         // Event listeners
