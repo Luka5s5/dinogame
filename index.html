@@ -366,7 +366,7 @@
                     gameState.assets.sky, 
                     0, 0, 
                     gameState.canvas.width, 
-                    gameState.canvas.height - CONFIG.GROUND_HEIGHT
+                    gameState.canvas.height
                 );
             } else {
                 ctx.fillStyle = '#87CEEB';
@@ -374,29 +374,29 @@
             }
             
             // Draw ground
-            if (gameState.assets.ground) {
-                // Draw first ground segment
-                ctx.drawImage(
-                    gameState.assets.ground,
-                    gameState.ground.x1, 
-                    gameState.canvas.height - CONFIG.GROUND_HEIGHT,
-                    gameState.ground.width,
-                    CONFIG.GROUND_HEIGHT
-                );
-                
-                // Draw second ground segment
-                ctx.drawImage(
-                    gameState.assets.ground,
-                    gameState.ground.x2, 
-                    gameState.canvas.height - CONFIG.GROUND_HEIGHT,
-                    gameState.ground.width,
-                    CONFIG.GROUND_HEIGHT
-                );
-            } else {
-                ctx.fillStyle = '#8B4513';
-                ctx.fillRect(0, gameState.canvas.height - CONFIG.GROUND_HEIGHT, gameState.canvas.width, CONFIG.GROUND_HEIGHT);
-            }
-            
+            // if (gameState.assets.ground) {
+            //     // Draw first ground segment
+            //     ctx.drawImage(
+            //         gameState.assets.ground,
+            //         gameState.ground.x1, 
+            //         gameState.canvas.height - CONFIG.GROUND_HEIGHT,
+            //         gameState.ground.width,
+            //         CONFIG.GROUND_HEIGHT
+            //     );
+            //
+            //     // Draw second ground segment
+            //     ctx.drawImage(
+            //         gameState.assets.ground,
+            //         gameState.ground.x2, 
+            //         gameState.canvas.height - CONFIG.GROUND_HEIGHT,
+            //         gameState.ground.width,
+            //         CONFIG.GROUND_HEIGHT
+            //     );
+            // } else {
+            //     ctx.fillStyle = '#8B4513';
+            //     ctx.fillRect(0, gameState.canvas.height - CONFIG.GROUND_HEIGHT, gameState.canvas.width, CONFIG.GROUND_HEIGHT);
+            // }
+            //
             // Draw obstacles
             gameState.obstacles.forEach(obstacle => {
                 ctx.drawImage(
