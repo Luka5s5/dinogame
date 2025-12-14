@@ -119,7 +119,9 @@
         const CONFIG = {
             GROUND_HEIGHT: 100,
             GRAVITY: 0.8,
-            JUMP_FORCE: -18,
+            JUMP_FORCE: -24,  // Increased jump force for taller character
+            BIRD_MIN_HEIGHT: 130,  // Increased minimum height for birds with taller player
+            BIRD_MAX_HEIGHT: 200,  // Increased maximum height for birds with taller player
             INITIAL_SPEED: 4,
             SPEED_INCREMENT: 0.01,
             OBSTACLE_MIN_GAP: 250,  // Increased minimum gap to make obstacles less frequent
@@ -142,7 +144,7 @@
                 x: 100,
                 y: 0,
                 width: 60,
-                height: 60,
+                height: 120,  // Double the height
                 velocityY: 0,
                 isJumping: false
             },
@@ -173,6 +175,7 @@
             totalImages: 0,
             lives: 3,  // Number of lives for the player
             backgroundMusic: null,  // Audio element for background music
+            hurtSound: null,  // Audio element for hurt sound
             musicMuted: false  // Whether music is muted
         };
 
@@ -247,7 +250,7 @@
             // Add coin asset (assuming we have a coin.png in assets)
             imagePaths.push('assets/coin.png');
             
-            gameState.totalImages = imagePaths.length + 1; // +1 for the audio file
+            gameState.totalImages = imagePaths.length + 1; // +1 for both audio files (they're handled together)
             
             imagePaths.forEach((path, index) => {
                 const img = new Image();
@@ -302,18 +305,35 @@
             gameState.backgroundMusic.loop = true; // Loop the music
             gameState.backgroundMusic.volume = 0.5; // Set initial volume
             
+            // Create audio element for hurt sound
+            gameState.hurtSound = new Audio('assets/hurt.mp3');
+            gameState.hurtSound.volume = 0.7; // Set volume for hurt sound
+            
             // Load audio and then continue with game initialization
-            gameState.backgroundMusic.addEventListener('canplaythrough', () => {
-                gameState.imagesLoaded++; // Increment to account for audio loading
-            });
+            let audioLoadedCount = 0;
+            const handleAudioLoad = () => {
+                audioLoadedCount++;
+                if (audioLoadedCount === 2) { // Both background and hurt sounds loaded or failed
+                    gameState.imagesLoaded++; // Increment to account for audio loading
+                }
+            };
+            
+            gameState.backgroundMusic.addEventListener('canplaythrough', handleAudioLoad);
+            gameState.hurtSound.addEventListener('canplaythrough', handleAudioLoad);
             
             gameState.backgroundMusic.addEventListener('error', () => {
                 console.error('Failed to load background music');
-                gameState.imagesLoaded++; // Increment even if audio fails to load
+                handleAudioLoad(); // Still count as loaded to not hang the game
             });
             
-            // Start loading the audio
+            gameState.hurtSound.addEventListener('error', () => {
+                console.error('Failed to load hurt sound');
+                handleAudioLoad(); // Still count as loaded to not hang the game
+            });
+            
+            // Start loading both audio files
             gameState.backgroundMusic.load();
+            gameState.hurtSound.load();
         }
 
         // Initialize game
@@ -390,11 +410,10 @@
             // by creating them at the appropriate y position
             if (Math.random() > 0.7) { // Still using random chance to make some birds
                 // Position birds at appropriate height - higher than player can jump
-                // The player jump height is around 18 pixels up per frame with gravity
-                // So birds should be at a height that's clearly above the player's maximum jump
+                // With taller character and higher jump force, we need to adjust bird positioning
                 const birdHeight = Math.random() * 
-                    (OBSTACLE_CONFIG.BIRD_MAX_HEIGHT - OBSTACLE_CONFIG.BIRD_MIN_HEIGHT) + 
-                    OBSTACLE_CONFIG.BIRD_MIN_HEIGHT;
+                    (CONFIG.BIRD_MAX_HEIGHT - CONFIG.BIRD_MIN_HEIGHT) + 
+                    CONFIG.BIRD_MIN_HEIGHT; // Use updated config values
                 obstacle.y = gameState.canvas.height - CONFIG.GROUND_HEIGHT - birdHeight - obstacleImg.height;
                 obstacle.isBird = true;
             }
@@ -482,6 +501,15 @@
                 )) {
                     gameState.lives--; // Lose a life on collision
                     updateScoreDisplay(); // Update display when life is lost
+                    
+                    // Play hurt sound when losing a life
+                    if (gameState.hurtSound && !gameState.musicMuted) {
+                        // Clone the audio to allow overlapping sounds
+                        const hurtAudio = new Audio('assets/hurt.mp3');
+                        hurtAudio.volume = 0.7;
+                        hurtAudio.play().catch(e => console.log("Hurt sound play failed:", e));
+                    }
+                    
                     if (gameState.lives <= 0) {
                         gameState.gameOver = true;
                     } else {
