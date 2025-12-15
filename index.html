@@ -74,12 +74,13 @@
             border-radius: 5px;
             white-space: pre-line; /* Allow line breaks */
             text-align: right; /* Right-align the text */
-            min-width: 120px; /* Ensure consistent width */
+            display: inline-block; /* Make box fit content */
+            min-width: 100px; /* Smaller minimum width */
         }
         
         .mute-button {
             position: absolute;
-            top: 60px;  /* Moved down to avoid overlap with score display */
+            top: 10px;  /* Move back to top-left corner */
             left: 10px;
             background: none;
             border: none;
