@@ -66,17 +66,15 @@
             top: 10px;
             right: 10px;
             color: black;
-            font-size: 18px; /* Reduced default font size */
+            font-size: 16px; /* Fixed font size */
             font-family: 'Courier New', monospace;
             z-index: 5;
             background: rgba(255, 255, 255, 0.7); /* Light background to make black text visible */
-            padding: 8px 12px;
+            padding: 10px;
             border-radius: 5px;
-            white-space: nowrap; /* Prevents text wrapping */
-            overflow: hidden; /* Hides overflow */
-            text-overflow: ellipsis; /* Adds ellipsis if text overflows */
-            max-width: 300px; /* Limit the width to ensure it stays as one line */
+            white-space: pre-line; /* Allow line breaks */
             text-align: right; /* Right-align the text */
+            min-width: 120px; /* Ensure consistent width */
         }
         
         .mute-button {
@@ -113,7 +111,9 @@
         <p>Don't give up! Try again to beat your record!</p>
         <button id="restartButton">🔄 PLAY AGAIN</button>
     </div>
-    <div class="score-display" id="scoreDisplay">Score: 0 | Lives: 3 | High: 0</div>
+    <div class="score-display" id="scoreDisplay">High: 0
+Score: 0
+Lives: 3</div>
     <button id="muteButton" class="mute-button" style="display: none;">
         <img id="muteIcon" src="assets/mute.png" alt="Mute" width="30" height="30">
     </button>
@@ -202,21 +202,8 @@
         // Update score display consistently
         function updateScoreDisplay() {
             const scoreElement = document.getElementById('scoreDisplay');
-            scoreElement.textContent = `Score: ${gameState.score} | Lives: ${gameState.lives} | High: ${gameState.highScore}`;
-            
-            // Adjust font size based on content length to ensure it stays on one line
-            const maxWidth = 300; // Maximum width for the display element
-            const textWidth = scoreElement.scrollWidth;
-            
-            if (textWidth > maxWidth) {
-                // Calculate a smaller font size proportionally
-                const currentFontSize = parseInt(window.getComputedStyle(scoreElement).fontSize);
-                const newFontSize = Math.max(12, currentFontSize * (maxWidth / textWidth)); // Minimum 12px
-                scoreElement.style.fontSize = newFontSize + 'px';
-            } else {
-                // Reset to original font size if content fits
-                scoreElement.style.fontSize = '18px';
-            }
+            // Display each element on a separate line
+            scoreElement.textContent = `High: ${gameState.highScore}\nScore: ${gameState.score}\nLives: ${gameState.lives}`;
         }
         
         // Toggle music mute
@@ -521,21 +508,33 @@
                 const obstacle = gameState.obstacles[i];
                 obstacle.x -= gameState.gameSpeed;
                 
-                // Check collision with reduced hitbox for obstacles (additional 10% smaller for easier gameplay)
-                // This makes the actual hitbox 70% of the original size (reduced by 15% on left and 15% on right)
+                // Check collision with reduced hitbox for obstacles (10% smaller on each side for easier gameplay)
+                // But ensure minimum hitbox size for very small obstacles
+                const minObstacleHitboxWidth = 15;  // Minimum width for obstacle hitbox
+                const minObstacleHitboxHeight = 15; // Minimum height for obstacle hitbox
+                
+                const reducedObstacleWidth = Math.max(obstacle.width * 0.7, minObstacleHitboxWidth);
+                const reducedObstacleHeight = Math.max(obstacle.height * 0.7, minObstacleHitboxHeight);
+                
                 const reducedObstacle = {
-                    x: obstacle.x + (obstacle.width * 0.15), // 15% offset from left
-                    y: obstacle.y + (obstacle.height * 0.15), // 15% offset from top
-                    width: obstacle.width * 0.7, // 70% of original width
-                    height: obstacle.height * 0.7 // 70% of original height
+                    x: obstacle.x + ((obstacle.width - reducedObstacleWidth) / 2), // Center the hitbox horizontally
+                    y: obstacle.y + ((obstacle.height - reducedObstacleHeight) / 2), // Center the hitbox vertically
+                    width: reducedObstacleWidth,
+                    height: reducedObstacleHeight
                 };
                 
-                // Also reduce player hitbox by 15% on each side
+                // Also reduce player hitbox by 10% on each side with minimum size
+                const minPlayerHitboxWidth = 30;  // Minimum width for player hitbox
+                const minPlayerHitboxHeight = 60; // Minimum height for player hitbox
+                
+                const reducedPlayerWidth = Math.max(gameState.player.width * 0.7, minPlayerHitboxWidth);
+                const reducedPlayerHeight = Math.max(gameState.player.height * 0.7, minPlayerHitboxHeight);
+                
                 const reducedPlayer = {
-                    x: gameState.player.x + (gameState.player.width * 0.15), // 15% offset from left
-                    y: gameState.player.y + (gameState.player.height * 0.15), // 15% offset from top
-                    width: gameState.player.width * 0.7, // 70% of original width
-                    height: gameState.player.height * 0.7 // 70% of original height
+                    x: gameState.player.x + ((gameState.player.width - reducedPlayerWidth) / 2), // Center the hitbox horizontally
+                    y: gameState.player.y + ((gameState.player.height - reducedPlayerHeight) / 2), // Center the hitbox vertically
+                    width: reducedPlayerWidth,
+                    height: reducedPlayerHeight
                 };
                 
                 if (checkCollision(reducedPlayer, reducedObstacle)) {
