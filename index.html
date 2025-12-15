@@ -521,15 +521,22 @@
                 const obstacle = gameState.obstacles[i];
                 obstacle.x -= gameState.gameSpeed;
                 
-                // Check collision
+                // Check collision with tighter hitbox for obstacles to match visible image
+                const adjustedObstacle = {
+                    x: obstacle.x + (obstacle.width * 0.1), // Reduce hitbox width by 10% on each side
+                    y: obstacle.y + (obstacle.height * 0.1), // Reduce hitbox height by 10% on each side  
+                    width: obstacle.width * 0.8, // 80% of original width
+                    height: obstacle.height * 0.8 // 80% of original height
+                };
+                
                 if (checkCollision(
                     {
-                        x: gameState.player.x,
-                        y: gameState.player.y,
-                        width: gameState.player.width,
-                        height: gameState.player.height
+                        x: gameState.player.x + (gameState.player.width * 0.1), // Reduce player hitbox too
+                        y: gameState.player.y + (gameState.player.height * 0.1),
+                        width: gameState.player.width * 0.8,
+                        height: gameState.player.height * 0.8
                     },
-                    obstacle
+                    adjustedObstacle
                 )) {
                     gameState.lives--; // Lose a life on collision
                     updateScoreDisplay(); // Update display when life is lost
