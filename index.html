@@ -271,10 +271,9 @@ Lives: 3</div>
                     else if (index === imagePaths.length - 1) { // Last item is coin
                         gameState.assets.coin = img;
                     } else {
-                        // Scale obstacle while maintaining aspect ratio
-                        const scale = Math.random() * 
-                            (CONFIG.OBSTACLE_MAX_HEIGHT - CONFIG.OBSTACLE_MIN_HEIGHT) / img.height 
-                            + (CONFIG.OBSTACLE_MIN_HEIGHT / img.height);
+                        // Scale obstacle to consistent average size while maintaining aspect ratio
+                        const averageHeight = (CONFIG.OBSTACLE_MIN_HEIGHT + CONFIG.OBSTACLE_MAX_HEIGHT) / 2;
+                        const scale = averageHeight / img.height; // Consistent scale for all obstacles
                         const scaledWidth = img.width * scale;
                         const scaledHeight = img.height * scale;
                         
