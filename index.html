@@ -521,21 +521,21 @@
                 const obstacle = gameState.obstacles[i];
                 obstacle.x -= gameState.gameSpeed;
                 
-                // Check collision with reduced hitbox for obstacles (10% smaller on each side for easier gameplay)
-                // This makes the actual hitbox 80% of the original size (reduced by 10% on left and 10% on right)
+                // Check collision with reduced hitbox for obstacles (additional 10% smaller for easier gameplay)
+                // This makes the actual hitbox 70% of the original size (reduced by 15% on left and 15% on right)
                 const reducedObstacle = {
-                    x: obstacle.x + (obstacle.width * 0.1), // 10% offset from left
-                    y: obstacle.y + (obstacle.height * 0.1), // 10% offset from top
-                    width: obstacle.width * 0.8, // 80% of original width
-                    height: obstacle.height * 0.8 // 80% of original height
+                    x: obstacle.x + (obstacle.width * 0.15), // 15% offset from left
+                    y: obstacle.y + (obstacle.height * 0.15), // 15% offset from top
+                    width: obstacle.width * 0.7, // 70% of original width
+                    height: obstacle.height * 0.7 // 70% of original height
                 };
                 
-                // Also reduce player hitbox by 10% on each side
+                // Also reduce player hitbox by 15% on each side
                 const reducedPlayer = {
-                    x: gameState.player.x + (gameState.player.width * 0.1), // 10% offset from left
-                    y: gameState.player.y + (gameState.player.height * 0.1), // 10% offset from top
-                    width: gameState.player.width * 0.8, // 80% of original width
-                    height: gameState.player.height * 0.8 // 80% of original height
+                    x: gameState.player.x + (gameState.player.width * 0.15), // 15% offset from left
+                    y: gameState.player.y + (gameState.player.height * 0.15), // 15% offset from top
+                    width: gameState.player.width * 0.7, // 70% of original width
+                    height: gameState.player.height * 0.7 // 70% of original height
                 };
                 
                 if (checkCollision(reducedPlayer, reducedObstacle)) {
