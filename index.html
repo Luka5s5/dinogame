@@ -461,9 +461,9 @@
         // Create new power-up (coin)
         function createPowerUp() {
             // Limit coin Y position to a reasonable range where player can reach it
-            // With larger player and lower jump, constrain range further
-            const maxCoinY = gameState.canvas.height - CONFIG.GROUND_HEIGHT - 120; // Not too close to ground
-            const minCoinY = 60; // Not too high up
+            // Account for player's jump height and size to ensure coins are always reachable
+            const maxCoinY = gameState.canvas.height - CONFIG.GROUND_HEIGHT - 80; // Higher up from ground (closer to player jump range)
+            const minCoinY = 100; // Lower maximum height to ensure reachability
             const coinYRange = Math.max(0, maxCoinY - minCoinY);
             
             const powerUp = {
