@@ -124,15 +124,15 @@
         const CONFIG = {
             GROUND_HEIGHT: 100,
             GRAVITY: 0.8,
-            JUMP_FORCE: -12,  // Reduced jump force for less high jumps
-            BIRD_MIN_HEIGHT: 65,  // Reduced minimum height for birds (half of previous)
-            BIRD_MAX_HEIGHT: 100, // Reduced maximum height for birds (half of previous)
+            JUMP_FORCE: -14,  // Slightly higher jump (less negative value)
+            BIRD_MIN_HEIGHT: 180,  // Increased minimum height for birds (accounting for taller player)
+            BIRD_MAX_HEIGHT: 250, // Increased maximum height for birds (accounting for taller player)
             INITIAL_SPEED: 4,
             SPEED_INCREMENT: 0.01,
             OBSTACLE_MIN_GAP: 250,  // Increased minimum gap to make obstacles less frequent
             OBSTACLE_MAX_GAP: 500,  // Increased maximum gap to make obstacles less frequent
-            OBSTACLE_MIN_HEIGHT: 20,  // Reduced minimum obstacle height
-            OBSTACLE_MAX_HEIGHT: 40,  // Reduced maximum obstacle height
+            OBSTACLE_MIN_HEIGHT: 40,
+            OBSTACLE_MAX_HEIGHT: 80,
             ASSETS: {
                 SKY: 'assets/sky.png',
                 GROUND: 'assets/ground.png',
@@ -283,13 +283,10 @@
                     else if (index === imagePaths.length - 1) { // Last item is coin
                         gameState.assets.coin = img;
                     } else {
-                        // Scale obstacle while maintaining aspect ratio - now with smaller obstacles
-                        const baseScale = 0.6; // Make obstacles smaller by default (60% of original size)
-                        const scale = baseScale * (
-                            Math.random() * 
+                        // Scale obstacle while maintaining aspect ratio
+                        const scale = Math.random() * 
                             (CONFIG.OBSTACLE_MAX_HEIGHT - CONFIG.OBSTACLE_MIN_HEIGHT) / img.height 
-                            + (CONFIG.OBSTACLE_MIN_HEIGHT / img.height)
-                        );
+                            + (CONFIG.OBSTACLE_MIN_HEIGHT / img.height);
                         const scaledWidth = img.width * scale;
                         const scaledHeight = img.height * scale;
                         
