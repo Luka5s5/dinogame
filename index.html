@@ -66,12 +66,17 @@
             top: 10px;
             right: 10px;
             color: black;
-            font-size: 24px;
+            font-size: 18px; /* Reduced default font size */
             font-family: 'Courier New', monospace;
             z-index: 5;
             background: rgba(255, 255, 255, 0.7); /* Light background to make black text visible */
-            padding: 5px 10px;
+            padding: 8px 12px;
             border-radius: 5px;
+            white-space: nowrap; /* Prevents text wrapping */
+            overflow: hidden; /* Hides overflow */
+            text-overflow: ellipsis; /* Adds ellipsis if text overflows */
+            max-width: 300px; /* Limit the width to ensure it stays as one line */
+            text-align: right; /* Right-align the text */
         }
         
         .mute-button {
@@ -119,15 +124,15 @@
         const CONFIG = {
             GROUND_HEIGHT: 100,
             GRAVITY: 0.8,
-            JUMP_FORCE: -24,  // Increased jump force for taller character
-            BIRD_MIN_HEIGHT: 130,  // Increased minimum height for birds with taller player
-            BIRD_MAX_HEIGHT: 200,  // Increased maximum height for birds with taller player
+            JUMP_FORCE: -12,  // Reduced jump force for less high jumps
+            BIRD_MIN_HEIGHT: 65,  // Reduced minimum height for birds (half of previous)
+            BIRD_MAX_HEIGHT: 100, // Reduced maximum height for birds (half of previous)
             INITIAL_SPEED: 4,
             SPEED_INCREMENT: 0.01,
             OBSTACLE_MIN_GAP: 250,  // Increased minimum gap to make obstacles less frequent
             OBSTACLE_MAX_GAP: 500,  // Increased maximum gap to make obstacles less frequent
-            OBSTACLE_MIN_HEIGHT: 40,
-            OBSTACLE_MAX_HEIGHT: 80,
+            OBSTACLE_MIN_HEIGHT: 20,  // Reduced minimum obstacle height
+            OBSTACLE_MAX_HEIGHT: 40,  // Reduced maximum obstacle height
             ASSETS: {
                 SKY: 'assets/sky.png',
                 GROUND: 'assets/ground.png',
@@ -143,8 +148,8 @@
             player: {
                 x: 50,  // Moved further to the left for more reaction time
                 y: 0,
-                width: 60,
-                height: 120,  // Double the height
+                width: 120,  // Doubled width
+                height: 240,  // Doubled height (previously was 120)
                 velocityY: 0,
                 isJumping: false
             },
@@ -196,7 +201,22 @@
 
         // Update score display consistently
         function updateScoreDisplay() {
-            document.getElementById('scoreDisplay').textContent = `Score: ${gameState.score} | Lives: ${gameState.lives} | High: ${gameState.highScore}`;
+            const scoreElement = document.getElementById('scoreDisplay');
+            scoreElement.textContent = `Score: ${gameState.score} | Lives: ${gameState.lives} | High: ${gameState.highScore}`;
+            
+            // Adjust font size based on content length to ensure it stays on one line
+            const maxWidth = 300; // Maximum width for the display element
+            const textWidth = scoreElement.scrollWidth;
+            
+            if (textWidth > maxWidth) {
+                // Calculate a smaller font size proportionally
+                const currentFontSize = parseInt(window.getComputedStyle(scoreElement).fontSize);
+                const newFontSize = Math.max(12, currentFontSize * (maxWidth / textWidth)); // Minimum 12px
+                scoreElement.style.fontSize = newFontSize + 'px';
+            } else {
+                // Reset to original font size if content fits
+                scoreElement.style.fontSize = '18px';
+            }
         }
         
         // Toggle music mute
@@ -263,10 +283,13 @@
                     else if (index === imagePaths.length - 1) { // Last item is coin
                         gameState.assets.coin = img;
                     } else {
-                        // Scale obstacle while maintaining aspect ratio
-                        const scale = Math.random() * 
+                        // Scale obstacle while maintaining aspect ratio - now with smaller obstacles
+                        const baseScale = 0.6; // Make obstacles smaller by default (60% of original size)
+                        const scale = baseScale * (
+                            Math.random() * 
                             (CONFIG.OBSTACLE_MAX_HEIGHT - CONFIG.OBSTACLE_MIN_HEIGHT) / img.height 
-                            + (CONFIG.OBSTACLE_MIN_HEIGHT / img.height);
+                            + (CONFIG.OBSTACLE_MIN_HEIGHT / img.height)
+                        );
                         const scaledWidth = img.width * scale;
                         const scaledHeight = img.height * scale;
                         
@@ -441,16 +464,16 @@
         // Create new power-up (coin)
         function createPowerUp() {
             // Limit coin Y position to a reasonable range where player can reach it
-            // Ensure it's not too high but also not too close to the ground
-            const maxCoinY = gameState.canvas.height - CONFIG.GROUND_HEIGHT - 100; // Not too close to ground
-            const minCoinY = 80; // Not too high up
+            // With larger player and lower jump, constrain range further
+            const maxCoinY = gameState.canvas.height - CONFIG.GROUND_HEIGHT - 120; // Not too close to ground
+            const minCoinY = 60; // Not too high up
             const coinYRange = Math.max(0, maxCoinY - minCoinY);
             
             const powerUp = {
                 x: gameState.canvas.width,
                 y: Math.random() * coinYRange + minCoinY, // Constrained Y position
-                width: 30,
-                height: 30,
+                width: 40,  // Increased size to match larger game elements
+                height: 40, // Increased size to match larger game elements
                 collected: false
             };
             
