@@ -449,8 +449,9 @@ Lives: 3</div>
             const powerUp = {
                 x: gameState.canvas.width,
                 y: Math.random() * coinYRange + minCoinY, // Constrained Y position
-                width: 40,  // Increased size to match larger game elements
-                height: 40, // Increased size to match larger game elements
+                width: 80,  // Doubled size to make coins more visible - increased from 40 to 80
+                height: 80, // Doubled size to make coins more visible - increased from 40 to 80
+                coinTextureIndex: Math.floor(Math.random() * gameState.assets.coins.length), // Fixed texture index chosen once
                 collected: false
             };
             
@@ -657,9 +658,10 @@ Lives: 3</div>
             // Draw power-ups (coins)
             gameState.powerUps.forEach(powerUp => {
                 if (!powerUp.collected && gameState.assets.coins.length > 0) {
-                    // Randomly select one of the coin images
-                    const randomCoinIndex = Math.floor(Math.random() * gameState.assets.coins.length);
-                    const selectedCoin = gameState.assets.coins[randomCoinIndex];
+                    // Use the fixed coin texture that was selected when power-up was created
+                    // Make sure the coinTextureIndex exists and is valid
+                    const coinIndex = powerUp.coinTextureIndex !== undefined ? powerUp.coinTextureIndex : 0;
+                    const selectedCoin = gameState.assets.coins[coinIndex];
                     ctx.drawImage(
                         selectedCoin,
                         powerUp.x,
