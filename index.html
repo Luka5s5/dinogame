@@ -436,10 +436,18 @@ Lives: 3</div>
             
             gameState.obstacles.push(obstacle);
             gameState.lastObstacleTime = Date.now();
-            // Set time for next obstacle based on external config
+            // Set time for next obstacle based on current game speed to maintain consistent density
+            // As speed increases, interval decreases (more frequent spawning)
+            // Base interval is inversely proportional to speed
+            const baseMinInterval = 1500; // Base minimum interval at speed 5
+            const baseMaxInterval = 4000; // Base maximum interval at speed 5
+            const speedFactor = 5 / gameState.gameSpeed; // At higher speed, interval gets smaller
+            
+            const minInterval = baseMinInterval * speedFactor;
+            const maxInterval = baseMaxInterval * speedFactor;
+            
             gameState.nextObstacleInterval = Math.random() * 
-                (OBSTACLE_CONFIG.MAX_OBSTACLE_INTERVAL - OBSTACLE_CONFIG.MIN_OBSTACLE_INTERVAL) + 
-                OBSTACLE_CONFIG.MIN_OBSTACLE_INTERVAL;
+                (maxInterval - minInterval) + minInterval;
         }
 
         // Create new power-up (coin)
