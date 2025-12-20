@@ -175,7 +175,7 @@ Lives: 3</div>
                 ground: null,
                 player: null,
                 obstacles: [],
-                coin: null  // Coin asset for power-ups
+                coins: []  // Array to hold multiple coin assets for power-ups
             },
             imagesLoaded: 0,
             totalImages: 0,
@@ -243,12 +243,11 @@ Lives: 3</div>
                 CONFIG.ASSETS.PLAYER
             ];
             
-            // Get obstacle files from server (simplified for Telegram)
-            // In production, you'd have a predefined list or API endpoint
+            // List all possible obstacle files in the obstacles folder
             const obstacleFiles = [
-                'cactus2.png',
-                'cactus2.png',
                 'bird.png',
+                'cactus1.png',
+                'cactus2.png',
                 'rock.png'
             ];
             
@@ -256,8 +255,10 @@ Lives: 3</div>
                 imagePaths.push(CONFIG.ASSETS.OBSTACLES_FOLDER + file);
             });
             
-            // Add coin asset (assuming we have a coin.png in assets)
-            imagePaths.push('assets/coin.png');
+            // Add coin assets (all three coin images)
+            imagePaths.push('assets/coin1.png');
+            imagePaths.push('assets/coin2.png');
+            imagePaths.push('assets/coin3.png');
             
             gameState.totalImages = imagePaths.length + 1; // +1 for all audio files (they're handled together)
             
@@ -268,8 +269,8 @@ Lives: 3</div>
                     if (index === 0) gameState.assets.sky = img;
                     else if (index === 1) gameState.assets.ground = img;
                     else if (index === 2) gameState.assets.player = img;
-                    else if (index === imagePaths.length - 1) { // Last item is coin
-                        gameState.assets.coin = img;
+                    else if (index >= imagePaths.length - 3) { // Last three items are coins
+                        gameState.assets.coins.push(img);
                     } else {
                         // Scale obstacle to consistent average size while maintaining aspect ratio
                         const averageHeight = (CONFIG.OBSTACLE_MIN_HEIGHT + CONFIG.OBSTACLE_MAX_HEIGHT) / 2;
@@ -288,8 +289,8 @@ Lives: 3</div>
                 };
                 img.onerror = () => {
                     console.error(`Failed to load asset: ${path}`);
-                    // If coin asset fails to load, we can create a simple circle instead
-                    if (index === imagePaths.length - 1) { // Last item is coin
+                    // If any coin asset fails to load, we can create a simple circle instead
+                    if (index >= imagePaths.length - 3) { // Last three items are coins
                         const canvas = document.createElement('canvas');
                         canvas.width = 30;
                         canvas.height = 30;
@@ -301,7 +302,7 @@ Lives: 3</div>
                         ctx.strokeStyle = '#DAA520';
                         ctx.lineWidth = 2;
                         ctx.stroke();
-                        gameState.assets.coin = canvas;
+                        gameState.assets.coins.push(canvas);
                     }
                     gameState.imagesLoaded++;
                 };
@@ -406,10 +407,7 @@ Lives: 3</div>
             const obstacleIndex = Math.floor(Math.random() * gameState.assets.obstacles.length);
             const obstacleImg = gameState.assets.obstacles[obstacleIndex];
             
-            // Check if this obstacle is a bird by looking for "bird" in its filename/index
-            // We'll determine this by checking if it's likely a bird image based on the index
-            // Assuming the bird.png is loaded as one of the obstacles (index 2 in the original list)
-            // But to be more robust, let's create the obstacle first and then determine if it's a bird
+            // Create the obstacle with random appearance from loaded obstacles
             const obstacle = {
                 x: gameState.canvas.width,
                 y: gameState.canvas.height - CONFIG.GROUND_HEIGHT - obstacleImg.height,
@@ -420,14 +418,9 @@ Lives: 3</div>
                 isBird: false  // Add a property to identify if this is a bird
             };
             
-            // Determine if this is a bird (for now, we'll use the index - in original setup bird.png was 3rd entry)
-            // Better approach: Check based on the type of obstacle - birds should be placed higher
-            // We'll implement a more robust check later
-            
-            // For now, we'll identify birds by checking if we're using the bird.png asset
-            // Since we can't directly check the source, let's make all birds positioned at proper height
-            // by creating them at the appropriate y position
-            if (Math.random() > 0.7) { // Still using random chance to make some birds
+            // Determine if this is a bird based on placement behavior (random chance)
+            // Birds are typically flying obstacles that appear higher than ground obstacles
+            if (Math.random() > 0.7) { // Using probability to make some obstacles behave as birds
                 // Position birds at appropriate height - higher than player can jump
                 // With taller character and higher jump force, we need to adjust bird positioning
                 const birdHeight = Math.random() * 
@@ -663,16 +656,19 @@ Lives: 3</div>
             //
             // Draw power-ups (coins)
             gameState.powerUps.forEach(powerUp => {
-                if (!powerUp.collected && gameState.assets.coin) {
+                if (!powerUp.collected && gameState.assets.coins.length > 0) {
+                    // Randomly select one of the coin images
+                    const randomCoinIndex = Math.floor(Math.random() * gameState.assets.coins.length);
+                    const selectedCoin = gameState.assets.coins[randomCoinIndex];
                     ctx.drawImage(
-                        gameState.assets.coin,
+                        selectedCoin,
                         powerUp.x,
                         powerUp.y,
                         powerUp.width,
                         powerUp.height
                     );
                 } else if (!powerUp.collected) {
-                    // Draw a simple circle if coin asset failed to load
+                    // Draw a simple circle if coin assets failed to load
                     ctx.fillStyle = '#FFD700';
                     ctx.beginPath();
                     ctx.arc(
