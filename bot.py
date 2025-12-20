@@ -1,6 +1,6 @@
 import logging
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import os
 from dotenv import load_dotenv
 
@@ -71,22 +71,18 @@ def handle_message(update: Update, context: CallbackContext) -> None:
 
 def main() -> None:
     """Run the bot."""
-    # Create the Updater and pass it your bot's token
-    updater = Updater(os.getenv("TELEGRAM_BOT_TOKEN"))
-    
-    # Get the dispatcher to register handlers
-    dispatcher = updater.dispatcher
+    # Create the Application and pass it your bot's token
+    application = Application.builder().token(os.getenv("TELEGRAM_BOT_TOKEN")).build()
     
     # Add handlers
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     # Start the Bot
-    updater.start_polling()
+    application.run_polling()
     
     # Run the bot until you press Ctrl-C or the process receives SIGINT, SIGTERM or SIGABRT
     logger.info("Bot is running...")
-    updater.idle()
 
 if __name__ == '__main__':
     main()
