@@ -1,8 +1,8 @@
 // Configuration file for obstacle settings
 const OBSTACLE_CONFIG = {
-    // Time intervals between obstacles (in milliseconds) - halved to make obstacles 2x more frequent
-    MIN_OBSTACLE_INTERVAL: 750,  // 0.75 seconds (half of 1.5 seconds)
-    MAX_OBSTACLE_INTERVAL: 2000,  // 2 seconds (half of 4 seconds)
+    // Time intervals between obstacles (in milliseconds) - back to normal for 1.5x slower game
+    MIN_OBSTACLE_INTERVAL: 1500,  // 1.5 seconds 
+    MAX_OBSTACLE_INTERVAL: 4000,  // 4 seconds
     
     // Bird positioning settings
     BIRD_MIN_HEIGHT: 80,    // Minimum height above ground for birds (pixels)

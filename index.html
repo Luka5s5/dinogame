@@ -63,9 +63,11 @@
         }
         
         #startScreen button {
-            background: rgba(0, 0, 0, 0.7); /* Dark background to make button text more visible over image */
-            color: white;
-            border: 2px solid white;
+            background: #bfbfbf; /* Gray color with 0 transparency */
+            color: black; /* Changed text color to contrast with gray */
+            border: 2px solid black; /* Black border */
+            border-radius: 0; /* Remove rounded corners */
+            margin-top: -100px; /* Move button further up */
         }
         .score-display {
             position: absolute;
@@ -130,8 +132,8 @@ Lives: 3</div>
             JUMP_FORCE: -18,  // Slightly higher jump (less negative value)
             BIRD_MIN_HEIGHT: 350,  // Increased minimum height for birds (accounting for taller player)
             BIRD_MAX_HEIGHT: 400, // Increased maximum height for birds (accounting for taller player)
-            INITIAL_SPEED: 12,  // Doubled from 6 to 12 to make the game 2x faster
-            SPEED_INCREMENT: 0.03,  // Doubled from 0.015 to 0.03 to make the speed increase 2x faster
+            INITIAL_SPEED: 4,  // Standard is 6, making it 1.5 times slower than standard (6/1.5 = 4)
+            SPEED_INCREMENT: 0.01,  // Standard is 0.015, making it 1.5 times slower (0.015/1.5 = 0.01)
             OBSTACLE_MIN_GAP: 250,  // Increased minimum gap to make obstacles less frequent
             OBSTACLE_MAX_GAP: 500,  // Increased maximum gap to make obstacles less frequent
             OBSTACLE_MIN_HEIGHT: 40,
@@ -459,8 +461,8 @@ Lives: 3</div>
             
             gameState.powerUps.push(powerUp);
             gameState.lastPowerUpTime = Date.now();
-            // Set time for next power-up (random interval between 10-30 seconds) - doubled to make coins 2x more rare
-            gameState.nextPowerUpInterval = Math.random() * 20000 + 10000; // 10-30 seconds
+            // Set time for next power-up (random interval between ~3.33-10 seconds) - 1.5 times more frequent than original
+            gameState.nextPowerUpInterval = Math.random() * 6667 + 3333; // ~3.33-10 seconds
         }
 
         // Check collision between two rectangles
