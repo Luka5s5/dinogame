@@ -26,7 +26,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0,0,0,0.7);
+            background: url('assets/start.jpg') center/cover no-repeat;
             color: white;
             font-family: Arial, sans-serif;
             text-align: center;
@@ -60,6 +60,12 @@
             margin: 10px;
             cursor: pointer;
             border-radius: 5px;
+        }
+        
+        #startScreen button {
+            background: rgba(0, 0, 0, 0.7); /* Dark background to make button text more visible over image */
+            color: white;
+            border: 2px solid white;
         }
         .score-display {
             position: absolute;
@@ -100,10 +106,6 @@
 <body>
     <canvas id="gameCanvas"></canvas>
     <div id="startScreen">
-        <h1>🦖 DINO ADVENTURE</h1>
-        <p>Press SPACE or TAP to jump over obstacles!</p>
-        <p>Collect coins for extra lives!</p>
-        <p>Your goal: Beat your high score!</p>
         <button id="startButton">🎮 START GAME</button>
     </div>
     <div id="gameOverScreen">
