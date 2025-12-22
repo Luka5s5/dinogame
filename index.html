@@ -741,7 +741,6 @@ Lives: 3</div>
                 saveHighScore(); // Save high score when game ends
                 pauseBackgroundMusic(); // Pause background music when game ends
                 updateScoreDisplay(); // Make sure display is updated before game ends
-                document.getElementById('finalScore').textContent = `Score: ${gameState.score} | Best: ${gameState.highScore}`;
                 document.getElementById('gameOverScreen').style.display = 'flex';
                 return;
             }
