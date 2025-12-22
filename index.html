@@ -26,7 +26,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: url('assets/start.png') center/cover no-repeat;
+            background: #000; /* Fallback background */
             color: white;
             font-family: Arial, sans-serif;
             text-align: center;
@@ -42,7 +42,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: url('assets/end.png') center/cover no-repeat;
+            background: #000; /* Fallback background */
             color: white;
             font-family: Arial, sans-serif;
             text-align: center;
@@ -182,7 +182,9 @@ Lives: 3</div>
                 ground: null,
                 player: null,
                 obstacles: [],
-                coins: []  // Array to hold multiple coin assets for power-ups
+                coins: [],  // Array to hold multiple coin assets for power-ups
+                startBackground: null,  // Start screen background image
+                endBackground: null     // End screen background image
             },
             imagesLoaded: 0,
             totalImages: 0,
@@ -247,7 +249,9 @@ Lives: 3</div>
             const imagePaths = [
                 CONFIG.ASSETS.SKY,
                 CONFIG.ASSETS.GROUND,
-                CONFIG.ASSETS.PLAYER
+                CONFIG.ASSETS.PLAYER,
+                'assets/start.png',  // Start screen background
+                'assets/end.png'     // End screen background
             ];
             
             // List all possible obstacle files in the obstacles folder
@@ -276,8 +280,11 @@ Lives: 3</div>
                     if (index === 0) gameState.assets.sky = img;
                     else if (index === 1) gameState.assets.ground = img;
                     else if (index === 2) gameState.assets.player = img;
+                    else if (index === 3) gameState.assets.startBackground = img; // start.png
+                    else if (index === 4) gameState.assets.endBackground = img;   // end.png
                     else if (index >= imagePaths.length - 3) { // Last three items are coins
                         gameState.assets.coins.push(img);
+                    } else {
                     } else {
                         // Scale obstacle to consistent average size while maintaining aspect ratio
                         const averageHeight = (CONFIG.OBSTACLE_MIN_HEIGHT + CONFIG.OBSTACLE_MAX_HEIGHT) / 2;
@@ -296,8 +303,16 @@ Lives: 3</div>
                 };
                 img.onerror = () => {
                     console.error(`Failed to load asset: ${path}`);
+                    // Handle background image loading failures
+                    if (index === 3) { // start.png failed
+                        console.log("start.png failed to load, will load from CSS fallback");
+                        gameState.assets.startBackground = null;
+                    } else if (index === 4) { // end.png failed
+                        console.log("end.png failed to load, will load from CSS fallback");
+                        gameState.assets.endBackground = null;
+                    } 
                     // If any coin asset fails to load, we can create a simple circle instead
-                    if (index >= imagePaths.length - 3) { // Last three items are coins
+                    else if (index >= imagePaths.length - 3) { // Last three items are coins
                         const canvas = document.createElement('canvas');
                         canvas.width = 30;
                         canvas.height = 30;
@@ -395,6 +410,15 @@ Lives: 3</div>
             // Hide UI screens
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOverScreen').style.display = 'none';
+            
+            // Set background images after preloading (if available)
+            if (gameState.assets.startBackground) {
+                document.getElementById('startScreen').style.background = `url('${gameState.assets.startBackground.src}') center/cover no-repeat`;
+            }
+            
+            if (gameState.assets.endBackground) {
+                document.getElementById('gameOverScreen').style.background = `url('${gameState.assets.endBackground.src}') center/cover no-repeat`;
+            }
             
             // Show mute button
             document.getElementById('muteButton').style.display = 'block';
@@ -747,6 +771,12 @@ Lives: 3</div>
                 saveHighScore(); // Save high score when game ends
                 pauseBackgroundMusic(); // Pause background music when game ends
                 updateScoreDisplay(); // Make sure display is updated before game ends
+                
+                // Set background image for game over screen if preloaded
+                if (gameState.assets.endBackground) {
+                    document.getElementById('gameOverScreen').style.background = `url('${gameState.assets.endBackground.src}') center/cover no-repeat`;
+                }
+                
                 document.getElementById('gameOverScreen').style.display = 'flex';
                 return;
             }
