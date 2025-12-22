@@ -42,7 +42,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0,0,0,0.7);
+            background: url('assets/end.png') center/cover no-repeat;
             color: white;
             font-family: Arial, sans-serif;
             text-align: center;
@@ -62,7 +62,7 @@
             border-radius: 5px;
         }
         
-        #startScreen button {
+        #startScreen button, #gameOverScreen button {
             background: #bfbfbf; /* Gray color with 0 transparency */
             color: black; /* Changed text color to contrast with gray */
             border: 2px solid black; /* Black border */
@@ -111,9 +111,6 @@
         <button id="startButton">🎮 START GAME</button>
     </div>
     <div id="gameOverScreen">
-        <h1>💥 GAME OVER 💥</h1>
-        <p id="finalScore">Score: 0</p>
-        <p>Don't give up! Try again to beat your record!</p>
         <button id="restartButton">🔄 PLAY AGAIN</button>
     </div>
     <div class="score-display" id="scoreDisplay">High: 0
