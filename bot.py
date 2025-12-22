@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Channel and bot information
 CHANNEL_ID = "@zaart_community"  # Replace with your channel username
-BOT_USERNAME = "cultureworkersimulatorbot"  # Replace with your bot username (without @)
+BOT_USERNAME = "cultural_worker_bot"  # Replace with your bot username (without @)
 GAME_URL = f"https://t.me/{BOT_USERNAME}/game"  # Game URL for the bot
 
 MESSAGE_NOT_SUBSCRIBED = """Привет, это команда «ЗА АРТ»!
