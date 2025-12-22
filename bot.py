@@ -1,8 +1,10 @@
 import logging
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 import os
+
 from dotenv import load_dotenv
+from telegram import Update
+from telegram.ext import (Application, CommandHandler, ContextTypes,
+                          MessageHandler, filters)
 
 # Load environment variables
 load_dotenv()
@@ -19,6 +21,12 @@ logger = logging.getLogger(__name__)
 CHANNEL_ID = "@zaart_community"  # Replace with your channel username
 BOT_USERNAME = "cultureworkersimulatorbot"  # Replace with your bot username (without @)
 GAME_URL = f"https://t.me/{BOT_USERNAME}/game"  # Game URL for the bot
+
+MESSAGE_NOT_SUBSCRIBED = """Привет, это команда «ЗА АРТ»!
+
+Под новый год, мы сделали игру, где можно закрывать горящие дедлайны и отчеты в один клик. Собирай оливьешку и подарки от Деда Мороза, чтобы победить все дела. А если игра кончится, то всегда можно начать с начала. 
+
+Закрывать задачи одним прыжком могут только подписчики телеграм-канала https://t.me/zaart_community, в котором мы рассказываем, как создаем культурные проекты."""
 
 async def check_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int) -> bool:
     """
@@ -44,12 +52,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     if is_subscribed:
         # User is subscribed, send the game link
-        message = f"Hello {user_name}! Thanks for being a subscriber. Enjoy the game!\n\n{GAME_URL}"
+        message = f"{GAME_URL}"
         await update.message.reply_text(message)
     else:
         # User is not subscribed, send the channel link
         channel_url = f"https://t.me/{CHANNEL_ID[1:]}"
-        message = f"Hello {user_name}! To access the game, please subscribe to our channel first:\n\n{channel_url}\n\nAfter subscribing, come back and I'll give you the game link."
+        message = MESSAGE_NOT_SUBSCRIBED
         await update.message.reply_text(message)
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
