@@ -55,7 +55,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     
     if is_subscribed:
         # User is subscribed, send the game link
-        message = f"{GAME_URL}"
+        message = f"""Привет, это команда «ЗА АРТ»!
+
+Под новый год, мы сделали игру, где можно закрывать горящие дедлайны и отчеты в один клик. Собирай оливьешку и подарки от Деда Мороза, чтобы победить все дела. А если игра кончится, то всегда можно начать с начала. 
+
+{GAME_URL}"""
         await update.message.reply_text(message)
     else:
         # User is not subscribed, send the channel link
