@@ -44,8 +44,11 @@ async def check_subscription(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send the appropriate link based on subscription status."""
+    await handle_message(update, context)
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle all other messages by checking subscription status."""
     user_id = update.effective_user.id
-    user_name = update.effective_user.first_name
     
     # Check if user is subscribed to the channel
     is_subscribed = await check_subscription(update, context, user_id)
@@ -58,23 +61,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         # User is not subscribed, send the channel link
         channel_url = f"https://t.me/{CHANNEL_ID[1:]}"
         message = MESSAGE_NOT_SUBSCRIBED
-        await update.message.reply_text(message)
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle all other messages by checking subscription status."""
-    user_id = update.effective_user.id
-    
-    # Check if user is subscribed to the channel
-    is_subscribed = await check_subscription(update, context, user_id)
-    
-    if is_subscribed:
-        # User is subscribed, send the game link
-        message = f"Thanks for being a subscriber! Here's the game link:\n\n{GAME_URL}"
-        await update.message.reply_text(message)
-    else:
-        # User is not subscribed, send the channel link
-        channel_url = f"https://t.me/{CHANNEL_ID[1:]}"
-        message = f"Please subscribe to our channel first:\n\n{channel_url}\n\nAfter subscribing, come back and I'll give you the game link."
         await update.message.reply_text(message)
 
 def main() -> None:
