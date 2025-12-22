@@ -244,6 +244,30 @@ Lives: 3</div>
 
         // Preload assets
         function preloadAssets() {
+            // Preload background images first to ensure they're available when screens appear
+            const startImg = new Image();
+            startImg.onload = () => {
+                gameState.imagesLoaded++;
+            };
+            startImg.onerror = () => {
+                console.error("Failed to load start background image");
+                gameState.imagesLoaded++; // Still count as loaded to not hang the game
+            };
+            startImg.src = 'assets/start.png';
+            
+            const endImg = new Image();
+            endImg.onload = () => {
+                gameState.imagesLoaded++;
+            };
+            endImg.onerror = () => {
+                console.error("Failed to load end background image");
+                gameState.imagesLoaded++; // Still count as loaded to not hang the game
+            };
+            endImg.src = 'assets/end.png';
+            
+            // Increment total images by 2 for the background images
+            gameState.totalImages = 2; // Start with 2 for background images
+            
             const imagePaths = [
                 CONFIG.ASSETS.SKY,
                 CONFIG.ASSETS.GROUND,
@@ -267,7 +291,7 @@ Lives: 3</div>
             imagePaths.push('assets/coin2.png');
             imagePaths.push('assets/coin3.png');
             
-            gameState.totalImages = imagePaths.length + 1; // +1 for all audio files (they're handled together)
+            gameState.totalImages = gameState.totalImages + imagePaths.length + 1; // +1 for all audio files (they're handled together)
             
             imagePaths.forEach((path, index) => {
                 const img = new Image();
